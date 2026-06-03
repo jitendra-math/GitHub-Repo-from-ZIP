@@ -1,17 +1,27 @@
 import React, { useRef } from 'react'
 import { motion } from 'framer-motion'
-import { UploadCloud, FileArchive, FolderGit2, X } from 'lucide-react'
+import { UploadCloud, FileArchive, FolderGit2, X, GitBranch, Github } from 'lucide-react'
 import Input from '../ui/Input'
 import Button from '../ui/Button'
 
 export default function UploadScreen({
+  // Repo name (for new repo)
   repoName,
   setRepoName,
+  // Existing repo branch upload fields
+  uploadMode,        // 'new' or 'existing'
+  setUploadMode,
+  existingRepoFullName,
+  setExistingRepoFullName,
+  branchName,
+  setBranchName,
+  // ZIP file and extracted files
   zipFile,
   extractedFiles,
   onFileUpload,
   onResetUpload,
-  onCreateRepo,
+  // Navigation
+  onContinue,        // goes to preview screen
   onClearToken
 }) {
   const fileInputRef = useRef(null)
@@ -28,6 +38,31 @@ export default function UploadScreen({
     setRepoName(e.target.value.replace(/\s+/g, '-'))
   }
 
+  // Existing repo full name validation hint
+  const handleExistingRepoChange = (e) => {
+    let value = e.target.value.trim()
+    // Auto-remove spaces and convert to lowercase
+    value = value.replace(/\s+/g, '').toLowerCase()
+    setExistingRepoFullName(value)
+  }
+
+  const handleBranchNameChange = (e) => {
+    let value = e.target.value.trim()
+    // Replace spaces with hyphens, no special chars
+    value = value.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9\-_.]/g, '')
+    setBranchName(value)
+  }
+
+  // Validation for continue button
+  const isContinueDisabled = () => {
+    if (!zipFile) return true
+    if (uploadMode === 'new') {
+      return !repoName
+    } else {
+      return !existingRepoFullName || !branchName
+    }
+  }
+
   return (
     <motion.div
       variants={screenVariants}
@@ -37,8 +72,8 @@ export default function UploadScreen({
       className="p-6 h-full flex flex-col w-full"
     >
       {/* Header section */}
-      <div className="flex justify-between items-center mb-8 mt-4">
-        <h2 className="text-2xl font-bold tracking-tight">New Repo</h2>
+      <div className="flex justify-between items-center mb-6 mt-4">
+        <h2 className="text-2xl font-bold tracking-tight">Upload Project</h2>
         <button
           onClick={onClearToken}
           className="text-red-500 text-xs font-medium bg-red-500/10 px-4 py-2 rounded-full active:scale-95 transition-transform"
@@ -47,13 +82,59 @@ export default function UploadScreen({
         </button>
       </div>
 
-      {/* Repo Name Input */}
-      <Input
-        label="Repository Name"
-        placeholder="e.g. my-awesome-project"
-        value={repoName}
-        onChange={handleRepoNameChange}
-      />
+      {/* Toggle between New Repo and Existing Repo */}
+      <div className="bg-surfaceHighlight/40 rounded-2xl p-1.5 flex mb-6">
+        <button
+          onClick={() => setUploadMode('new')}
+          className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+            uploadMode === 'new'
+              ? 'bg-primary text-white shadow-md'
+              : 'text-textSecondary hover:text-textPrimary'
+          }`}
+        >
+          <FolderGit2 className="w-4 h-4" />
+          New Repository
+        </button>
+        <button
+          onClick={() => setUploadMode('existing')}
+          className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+            uploadMode === 'existing'
+              ? 'bg-primary text-white shadow-md'
+              : 'text-textSecondary hover:text-textPrimary'
+          }`}
+        >
+          <GitBranch className="w-4 h-4" />
+          Existing Repo + Branch
+        </button>
+      </div>
+
+      {/* Conditional Inputs based on mode */}
+      {uploadMode === 'new' ? (
+        <Input
+          label="Repository Name"
+          placeholder="e.g. my-awesome-project"
+          value={repoName}
+          onChange={handleRepoNameChange}
+        />
+      ) : (
+        <>
+          <Input
+            label="Existing Repository (owner/repo)"
+            placeholder="e.g. johndoe/my-existing-project"
+            value={existingRepoFullName}
+            onChange={handleExistingRepoChange}
+          />
+          <Input
+            label="New Branch Name"
+            placeholder="zip-upload"
+            value={branchName}
+            onChange={handleBranchNameChange}
+          />
+          <p className="text-xs text-textSecondary mt- -mt-2 ml-1 mb-2">
+            ⚠️ Branch will be created if missing, and its content will be <strong>fully replaced</strong> with your ZIP.
+          </p>
+        </>
+      )}
 
       {/* File Upload Area */}
       <div className="flex-1 flex flex-col mt-2">
@@ -101,7 +182,7 @@ export default function UploadScreen({
               </button>
             </div>
 
-            {/* Tree Preview - Apple Style Inner Card */}
+            {/* Tree Preview */}
             <div className="bg-black/60 rounded-xl p-4 flex-1 overflow-hidden relative border border-white/5">
               <p className="text-xs text-textSecondary mb-3 font-medium tracking-wide uppercase">
                 Tree Preview
@@ -140,11 +221,11 @@ export default function UploadScreen({
       {/* Action Button */}
       <div className="mt-6">
         <Button
-          onClick={onCreateRepo}
-          disabled={!repoName || !zipFile}
+          onClick={onContinue}
+          disabled={isContinueDisabled()}
         >
           <FolderGit2 className="w-5 h-5" />
-          Create Repo & Push
+          {uploadMode === 'new' ? 'Review New Repo' : 'Review Branch Upload'}
         </Button>
       </div>
     </motion.div>

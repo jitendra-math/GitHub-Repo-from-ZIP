@@ -13,13 +13,22 @@ import SuccessScreen from './components/screens/SuccessScreen'
 
 // Utils
 import { extractZipForGithub } from './utils/zipExtract'
-import { createGithubRepoAndPush } from './utils/githubApi'
+import { createGithubRepoAndPush, pushToExistingRepoBranch } from './utils/githubApi'
 
 export default function App() {
-  // --- States ---
+  // --- Core States ---
   const [currentScreen, setCurrentScreen] = useState('setup') // setup, upload, preview, processing, success
   const [token, setToken] = useState('')
+  
+  // New repo fields
   const [repoName, setRepoName] = useState('')
+  
+  // Existing repo branch upload fields
+  const [uploadMode, setUploadMode] = useState('new') // 'new' or 'existing'
+  const [existingRepoFullName, setExistingRepoFullName] = useState('')
+  const [branchName, setBranchName] = useState('zip-upload')
+  
+  // ZIP file states
   const [zipFile, setZipFile] = useState(null)
   const [extractedFiles, setExtractedFiles] = useState([])
   
@@ -38,7 +47,6 @@ export default function App() {
   }, [])
 
   // --- Handlers ---
-
   const handleSaveToken = (newToken) => {
     setToken(newToken)
     localStorage.setItem('gh_mobile_token', newToken)
@@ -49,6 +57,13 @@ export default function App() {
     localStorage.removeItem('gh_mobile_token')
     setToken('')
     setCurrentScreen('setup')
+    // Reset all repo-related states
+    setRepoName('')
+    setUploadMode('new')
+    setExistingRepoFullName('')
+    setBranchName('zip-upload')
+    setZipFile(null)
+    setExtractedFiles([])
   }
 
   const handleFileUpload = async (e) => {
@@ -57,7 +72,6 @@ export default function App() {
 
     setZipFile(file)
     try {
-      // ZIP extract karke base64 array nikalna
       const files = await extractZipForGithub(file)
       setExtractedFiles(files)
     } catch (error) {
@@ -73,17 +87,40 @@ export default function App() {
 
   const startDeployment = async () => {
     setCurrentScreen('processing')
+    setProgress(0)
+    setStatusMessage('')
+    
     try {
-      const url = await createGithubRepoAndPush(
-        token, 
-        repoName, 
-        extractedFiles, 
-        (msg) => {
-          setStatusMessage(msg)
-          // Progress logic (Dheere dheere bar badhana)
-          setProgress((prev) => Math.min(prev + (100 / (extractedFiles.length + 5)), 95))
+      let url = ''
+      
+      if (uploadMode === 'new') {
+        // Existing logic for new repo
+        url = await createGithubRepoAndPush(
+          token, 
+          repoName, 
+          extractedFiles, 
+          (msg) => {
+            setStatusMessage(msg)
+            setProgress((prev) => Math.min(prev + (100 / (extractedFiles.length + 5)), 95))
+          }
+        )
+      } else {
+        // New logic for existing repo + branch
+        if (!existingRepoFullName.includes('/')) {
+          throw new Error('Invalid repository format. Use "owner/repo"')
         }
-      )
+        url = await pushToExistingRepoBranch(
+          token,
+          existingRepoFullName,
+          branchName,
+          extractedFiles,
+          (msg) => {
+            setStatusMessage(msg)
+            setProgress((prev) => Math.min(prev + (100 / (extractedFiles.length + 5)), 95))
+          }
+        )
+      }
+      
       setFinalRepoUrl(url)
       setProgress(100)
       setCurrentScreen('success')
@@ -95,7 +132,10 @@ export default function App() {
   }
 
   const handleDone = () => {
+    // Reset after successful upload
     setRepoName('')
+    setExistingRepoFullName('')
+    setBranchName('zip-upload')
     setZipFile(null)
     setExtractedFiles([])
     setProgress(0)
@@ -118,21 +158,33 @@ export default function App() {
         {/* 2. Upload Screen */}
         {currentScreen === 'upload' && (
           <UploadScreen 
+            // New repo fields
             repoName={repoName}
             setRepoName={setRepoName}
+            // Upload mode and existing repo fields
+            uploadMode={uploadMode}
+            setUploadMode={setUploadMode}
+            existingRepoFullName={existingRepoFullName}
+            setExistingRepoFullName={setExistingRepoFullName}
+            branchName={branchName}
+            setBranchName={setBranchName}
+            // ZIP file states
             zipFile={zipFile}
             extractedFiles={extractedFiles}
             onFileUpload={handleFileUpload}
             onResetUpload={handleResetUpload}
             onClearToken={handleClearToken}
-            onCreateRepo={() => setCurrentScreen('preview')}
+            onContinue={() => setCurrentScreen('preview')}
           />
         )}
 
         {/* 3. Preview Screen */}
         {currentScreen === 'preview' && (
           <PreviewScreen 
+            uploadMode={uploadMode}
             repoName={repoName}
+            existingRepoFullName={existingRepoFullName}
+            branchName={branchName}
             extractedFiles={extractedFiles}
             onBack={() => setCurrentScreen('upload')}
             onConfirm={startDeployment}

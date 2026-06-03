@@ -1,15 +1,29 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { ChevronLeft, FolderGit2, FileCode, PackageOpen } from 'lucide-react'
+import { ChevronLeft, FolderGit2, FileCode, PackageOpen, GitBranch } from 'lucide-react'
 import Button from '../ui/Button'
 
-export default function PreviewScreen({ repoName, extractedFiles, onConfirm, onBack }) {
+export default function PreviewScreen({ 
+  uploadMode,           // 'new' or 'existing'
+  repoName,             // for new mode
+  existingRepoFullName, // for existing mode
+  branchName,           // for existing mode
+  extractedFiles, 
+  onConfirm, 
+  onBack 
+}) {
   // Screen transition animations
   const screenVariants = {
     initial: { opacity: 0, x: 50 },
     animate: { opacity: 1, x: 0 },
     exit: { opacity: 0, x: -50 }
   }
+
+  // Determine target display text
+  const targetTitle = uploadMode === 'new' ? 'New Repository' : 'Existing Repository + Branch'
+  const targetValue = uploadMode === 'new' 
+    ? repoName 
+    : `${existingRepoFullName} / ${branchName}`
 
   return (
     <motion.div
@@ -30,14 +44,27 @@ export default function PreviewScreen({ repoName, extractedFiles, onConfirm, onB
         <h2 className="text-2xl font-bold tracking-tight">Review Tree</h2>
       </div>
 
-      {/* Repo Name Info Card */}
+      {/* Target Info Card */}
       <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 mb-6 flex items-center gap-4">
         <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
-          <PackageOpen className="w-6 h-6 text-primary" />
+          {uploadMode === 'new' ? (
+            <PackageOpen className="w-6 h-6 text-primary" />
+          ) : (
+            <GitBranch className="w-6 h-6 text-primary" />
+          )}
         </div>
-        <div>
-          <p className="text-[10px] uppercase tracking-widest text-primary font-bold">Target Repository</p>
-          <p className="text-lg font-semibold text-textPrimary truncate max-w-[200px]">{repoName}</p>
+        <div className="flex-1">
+          <p className="text-[10px] uppercase tracking-widest text-primary font-bold">
+            {targetTitle}
+          </p>
+          <p className="text-lg font-semibold text-textPrimary truncate max-w-[220px]">
+            {targetValue}
+          </p>
+          {uploadMode === 'existing' && (
+            <p className="text-xs text-textSecondary mt-1">
+              ⚠️ Branch content will be <strong>fully replaced</strong> with uploaded files.
+            </p>
+          )}
         </div>
       </div>
 
@@ -59,7 +86,7 @@ export default function PreviewScreen({ repoName, extractedFiles, onConfirm, onB
                 key={idx}
                 initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.03 }} // Staggered entry animation
+                transition={{ delay: idx * 0.03 }}
                 className="flex items-center gap-3 border-b border-border/30 pb-2 last:border-0"
               >
                 <FileCode className="w-4 h-4 text-primary/60 flex-shrink-0" />
@@ -76,7 +103,7 @@ export default function PreviewScreen({ repoName, extractedFiles, onConfirm, onB
       <div className="mt-6">
         <Button onClick={onConfirm}>
           <FolderGit2 className="w-5 h-5" />
-          Confirm & Push to GitHub
+          {uploadMode === 'new' ? 'Create Repo & Push' : 'Push to Branch'}
         </Button>
       </div>
 
