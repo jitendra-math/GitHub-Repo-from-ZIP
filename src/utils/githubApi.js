@@ -214,3 +214,104 @@ export const pushToExistingRepoBranch = async (token, repoFullName, branchName, 
     throw error;
   }
 };
+
+// ==================== NEW FUNCTIONS FOR DROPDOWN ====================
+
+/**
+ * Fetch all repositories for the authenticated user
+ * @param {string} token - GitHub Personal Access Token
+ * @returns {Promise<Array<{full_name: string, name: string, default_branch: string}>>}
+ */
+export const fetchUserRepos = async (token) => {
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    Accept: 'application/vnd.github.v3+json',
+  }
+
+  try {
+    const response = await fetch(
+      'https://api.github.com/user/repos?per_page=100&sort=updated&type=all&affiliation=owner,collaborator,organization_member',
+      { headers }
+    )
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error('Invalid token or token expired')
+      }
+      if (response.status === 403) {
+        throw new Error('Rate limit exceeded. Please try again later.')
+      }
+      const errorData = await response.json()
+      throw new Error(`Failed to fetch repositories: ${errorData.message || response.statusText}`)
+    }
+
+    const repos = await response.json()
+    
+    // Return only required fields
+    return repos.map(repo => ({
+      full_name: repo.full_name,
+      name: repo.name,
+      default_branch: repo.default_branch || 'main',
+      private: repo.private,
+      updated_at: repo.updated_at
+    }))
+  } catch (error) {
+    console.error('Fetch repos error:', error)
+    throw error
+  }
+}
+
+/**
+ * Fetch all branches for a specific repository
+ * @param {string} token - GitHub Personal Access Token
+ * @param {string} owner - Repository owner
+ * @param {string} repo - Repository name
+ * @returns {Promise<Array<{name: string, default: boolean}>>}
+ */
+export const fetchRepoBranches = async (token, owner, repo) => {
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    Accept: 'application/vnd.github.v3+json',
+  }
+
+  try {
+    // First, get the default branch
+    const repoResponse = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}`,
+      { headers }
+    )
+
+    if (!repoResponse.ok) {
+      if (repoResponse.status === 404) {
+        throw new Error(`Repository "${owner}/${repo}" not found or you don't have access`)
+      }
+      const errorData = await repoResponse.json()
+      throw new Error(`Failed to fetch repository info: ${errorData.message || repoResponse.statusText}`)
+    }
+
+    const repoData = await repoResponse.json()
+    const defaultBranch = repoData.default_branch || 'main'
+
+    // Now fetch all branches
+    const branchesResponse = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/branches?per_page=100`,
+      { headers }
+    )
+
+    if (!branchesResponse.ok) {
+      const errorData = await branchesResponse.json()
+      throw new Error(`Failed to fetch branches: ${errorData.message || branchesResponse.statusText}`)
+    }
+
+    const branches = await branchesResponse.json()
+    
+    // Mark default branch
+    return branches.map(branch => ({
+      name: branch.name,
+      default: branch.name === defaultBranch
+    }))
+  } catch (error) {
+    console.error('Fetch branches error:', error)
+    throw error
+  }
+}
