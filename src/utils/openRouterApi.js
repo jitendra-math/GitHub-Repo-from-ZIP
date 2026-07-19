@@ -13,7 +13,7 @@ export async function suggestRepoName(files) {
   }
 
   // Prepare file list with directory structure
-  const fileList = files.map(f => f.path).slice(0, 150) // limit to avoid huge prompts
+  const fileList = files.map(f => f.path).slice(0, 100) // limit to 100 files
   const folderStructure = fileList.join('\n')
 
   // Try to detect if package.json exists, if yes, include its content
@@ -28,21 +28,12 @@ export async function suggestRepoName(files) {
     }
   }
 
-  const systemPrompt = `You are a helpful assistant that suggests short, meaningful, and unique GitHub repository names.
-
-Given a list of files and folder structure from a project ZIP, suggest a suitable repo name.
-- Use kebab-case (lowercase, hyphens only)
-- Maximum 30 characters
-- If package.json has a 'name' field, use that as base
-- Otherwise, infer from folder structure or main files (e.g., index.html, main.py, etc.)
-- Avoid generic names like 'project', 'my-app', 'test'
-- Be creative but relevant`
-
-  let userPrompt = `Folder structure:\n${folderStructure}\n\n`
+  // Tighter prompt – only output the name
+  let userPrompt = `Files:\n${folderStructure}\n\n`
   if (pkgContent && pkgContent.name) {
     userPrompt += `package.json name: "${pkgContent.name}"\n`
   }
-  userPrompt += `Suggest exactly one repo name in kebab-case, with no extra explanation or backticks.`
+  userPrompt += `Based on the above, suggest a short GitHub repo name (kebab-case, max 30 chars). ONLY output the name, nothing else.`
 
   const response = await fetch(OPENROUTER_URL, {
     method: 'POST',
@@ -55,11 +46,15 @@ Given a list of files and folder structure from a project ZIP, suggest a suitabl
     body: JSON.stringify({
       model: MODEL,
       messages: [
-        { role: 'system', content: systemPrompt },
+        { 
+          role: 'system', 
+          content: 'You are a concise AI that outputs ONLY kebab-case repo names. No explanations, no backticks, no extra text.' 
+        },
         { role: 'user', content: userPrompt }
       ],
-      max_tokens: 20,
-      temperature: 0.7
+      max_tokens: 30,
+      temperature: 0.3,
+      stop: ['\n', '.', ' '] // stop at newline, period, or space
     })
   })
 
@@ -74,7 +69,24 @@ Given a list of files and folder structure from a project ZIP, suggest a suitabl
   }
 
   let suggestion = data.choices[0].message.content.trim()
-  // Clean: keep only valid kebab-case chars
-  suggestion = suggestion.replace(/[^a-zA-Z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
+  
+  // Clean: keep only valid kebab-case chars (alphanumeric + hyphen)
+  suggestion = suggestion
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+  
+  // Fallback if suggestion is empty
+  if (!suggestion || suggestion.length === 0) {
+    // Extract first meaningful folder name
+    const firstFolder = files.find(f => f.path.includes('/'))?.path.split('/')[0]
+    if (firstFolder) {
+      suggestion = firstFolder.toLowerCase().replace(/[^a-z0-9-]/g, '-')
+    } else {
+      suggestion = 'my-project'
+    }
+  }
+  
   return suggestion
 }
