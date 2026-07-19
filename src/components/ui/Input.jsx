@@ -1,6 +1,6 @@
 import React from 'react'
 
-export default function Input({ label, error, hint, className = '', ...props }) {
+export default function Input({ label, error, className = '', ...props }) {
   return (
     <div className="w-full flex flex-col mb-4">
       {/* Agar label pass kiya hai toh render hoga */}
@@ -22,11 +22,6 @@ export default function Input({ label, error, hint, className = '', ...props }) 
         `}
         {...props}
       />
-      
-      {/* Hint text - agar error nahi hai toh dikhega */}
-      {hint && !error && (
-        <span className="text-xs text-textSecondary mt-1 ml-1 opacity-70">{hint}</span>
-      )}
       
       {/* Agar koi validation error hai toh input ke neeche red color mein dikhega */}
       {error && (

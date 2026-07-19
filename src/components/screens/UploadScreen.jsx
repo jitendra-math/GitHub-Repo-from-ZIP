@@ -1,10 +1,8 @@
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useRef } from 'react'
 import { motion } from 'framer-motion'
-import { UploadCloud, FileArchive, FolderGit2, X, GitBranch } from 'lucide-react'
+import { UploadCloud, FileArchive, FolderGit2, X, GitBranch, Github } from 'lucide-react'
 import Input from '../ui/Input'
 import Button from '../ui/Button'
-import SearchableSelect from '../ui/SearchableSelect'
-import { fetchUserRepos, fetchRepoBranches } from '../../utils/githubApi'
 
 export default function UploadScreen({
   // Repo name (for new repo)
@@ -27,128 +25,35 @@ export default function UploadScreen({
   onClearToken
 }) {
   const fileInputRef = useRef(null)
-  const token = localStorage.getItem('gh_mobile_token') || ''
 
-  // --- New states for dropdowns ---
-  const [repoOptions, setRepoOptions] = useState([])
-  const [branchOptions, setBranchOptions] = useState([])
-  const [isReposLoading, setIsReposLoading] = useState(false)
-  const [isBranchesLoading, setIsBranchesLoading] = useState(false)
-  const [repoError, setRepoError] = useState('')
-  const [branchError, setBranchError] = useState('')
-
-  // --- Screen transition animation ---
+  // Screen transition animation
   const screenVariants = {
     initial: { opacity: 0, x: 20 },
     animate: { opacity: 1, x: 0 },
     exit: { opacity: 0, x: -20 }
   }
 
-  // --- Effect 1: Fetch repos when switching to "existing" mode ---
-  useEffect(() => {
-    if (uploadMode === 'existing' && token) {
-      loadUserRepos()
-    } else {
-      // Reset repo options when switching to new mode
-      setRepoOptions([])
-      setRepoError('')
-    }
-  }, [uploadMode, token])
-
-  // --- Effect 2: Fetch branches when repo is selected ---
-  useEffect(() => {
-    if (uploadMode === 'existing' && existingRepoFullName && existingRepoFullName.includes('/')) {
-      loadRepoBranches(existingRepoFullName)
-    } else {
-      setBranchOptions([])
-      setBranchError('')
-    }
-  }, [existingRepoFullName, uploadMode])
-
-  // --- Effect 3: Auto-suggest repo name from ZIP file (New mode) ---
-  useEffect(() => {
-    if (uploadMode === 'new' && zipFile) {
-      const suggestedName = zipFile.name
-        .replace(/\.zip$/i, '')
-        .replace(/\s+/g, '-')
-        .toLowerCase()
-        .replace(/[^a-z0-9-]/g, '')
-      if (suggestedName) {
-        setRepoName(suggestedName)
-      }
-    }
-  }, [zipFile, uploadMode, setRepoName])
-
-  // --- Handlers for fetching data ---
-  const loadUserRepos = async () => {
-    setIsReposLoading(true)
-    setRepoError('')
-    try {
-      const repos = await fetchUserRepos(token)
-      const options = repos.map(repo => ({
-        label: `${repo.full_name} ${repo.private ? '🔒' : '🔓'}`,
-        value: repo.full_name,
-        default_branch: repo.default_branch
-      }))
-      setRepoOptions(options)
-      
-      // If we have a previously selected repo, verify it still exists
-      if (existingRepoFullName) {
-        const stillExists = options.some(opt => opt.value === existingRepoFullName)
-        if (!stillExists) {
-          setExistingRepoFullName('')
-        }
-      }
-    } catch (error) {
-      setRepoError(error.message)
-      console.error('Failed to load repos:', error)
-    } finally {
-      setIsReposLoading(false)
-    }
-  }
-
-  const loadRepoBranches = async (repoFullName) => {
-    const [owner, repo] = repoFullName.split('/')
-    if (!owner || !repo) return
-
-    setIsBranchesLoading(true)
-    setBranchError('')
-    try {
-      const branches = await fetchRepoBranches(token, owner, repo)
-      const options = branches.map(branch => ({
-        label: branch.default ? `${branch.name} ⭐ (default)` : branch.name,
-        value: branch.name
-      }))
-      setBranchOptions(options)
-      
-      // Auto-select the default branch
-      const defaultBranch = branches.find(b => b.default)
-      if (defaultBranch) {
-        setBranchName(defaultBranch.name)
-      } else if (branches.length > 0) {
-        setBranchName(branches[0].name)
-      }
-    } catch (error) {
-      setBranchError(error.message)
-      console.error('Failed to load branches:', error)
-      // Don't clear branch options on error - keep whatever we had
-    } finally {
-      setIsBranchesLoading(false)
-    }
-  }
-
-  // --- Input handlers ---
+  // Repository name mein space ko hyphen mein badalna
   const handleRepoNameChange = (e) => {
     setRepoName(e.target.value.replace(/\s+/g, '-'))
   }
 
+  // Existing repo full name validation hint
+  const handleExistingRepoChange = (e) => {
+    let value = e.target.value.trim()
+    // Auto-remove spaces and convert to lowercase
+    value = value.replace(/\s+/g, '').toLowerCase()
+    setExistingRepoFullName(value)
+  }
+
   const handleBranchNameChange = (e) => {
     let value = e.target.value.trim()
+    // Replace spaces with hyphens, no special chars
     value = value.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9\-_.]/g, '')
     setBranchName(value)
   }
 
-  // --- Validation for continue button ---
+  // Validation for continue button
   const isContinueDisabled = () => {
     if (!zipFile) return true
     if (uploadMode === 'new') {
@@ -210,39 +115,23 @@ export default function UploadScreen({
           placeholder="e.g. my-awesome-project"
           value={repoName}
           onChange={handleRepoNameChange}
-          hint={zipFile ? `📦 Suggested from: ${zipFile.name}` : ''}
         />
       ) : (
         <>
-          <SearchableSelect
-            label="Select Repository"
-            placeholder="Search your repositories..."
+          <Input
+            label="Existing Repository (owner/repo)"
+            placeholder="e.g. johndoe/my-existing-project"
             value={existingRepoFullName}
-            onChange={setExistingRepoFullName}
-            options={repoOptions}
-            isLoading={isReposLoading}
-            error={repoError}
-            onFocus={() => {
-              if (repoOptions.length === 0 && !isReposLoading) {
-                loadUserRepos()
-              }
-            }}
-            required
+            onChange={handleExistingRepoChange}
           />
-          
-          <SearchableSelect
-            label="Select Branch"
-            placeholder={isBranchesLoading ? "Loading branches..." : "Select a branch"}
+          <Input
+            label="New Branch Name"
+            placeholder="zip-upload"
             value={branchName}
-            onChange={setBranchName}
-            options={branchOptions}
-            isLoading={isBranchesLoading}
-            error={branchError}
-            required
+            onChange={handleBranchNameChange}
           />
-          
-          <p className="text-xs text-textSecondary -mt-2 ml-1 mb-2">
-            ⚠️ Branch content will be <strong>fully replaced</strong> with your ZIP.
+          <p className="text-xs text-textSecondary mt- -mt-2 ml-1 mb-2">
+            ⚠️ Branch will be created if missing, and its content will be <strong>fully replaced</strong> with your ZIP.
           </p>
         </>
       )}
