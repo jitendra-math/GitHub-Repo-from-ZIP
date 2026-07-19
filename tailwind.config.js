@@ -7,14 +7,14 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Warm premium palette
-        background: '#3B2C3A',      // deep plum base
-        surface: '#6B4E5A',         // mid mauve for cards
-        surfaceHighlight: '#A67B8B', // accent for active states / highlights
+        // Lighter warm background, darker surface for contrast
+        background: '#6B4E5A',      // mid mauve – lighter warm base
+        surface: '#3B2C3A',         // deep plum – cards/containers
+        surfaceHighlight: '#A67B8B', // accent / active states
         primary: '#A67B8B',         // primary action color
         textPrimary: '#FDF7F8',     // off-white text
-        textSecondary: '#E8D5D7',   // soft rose for secondary text
-        border: '#E8D5D7',          // base border color (opacity used in components)
+        textSecondary: '#E8D5D7',   // soft rose for secondary
+        border: '#E8D5D7',          // base border (opacity used)
       },
       fontFamily: {
         sans: [

@@ -2,16 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Mobile-first refinements with new palette */
+/* Mobile-first refinements – lighter warm background */
 body {
-  background-color: #3B2C3A;
+  background-color: #6B4E5A;
   color: #FDF7F8;
   -webkit-tap-highlight-color: transparent;
-  font-size: 14px; /* base size for cleaner typography */
+  font-size: 14px;
   line-height: 1.5;
 }
 
-/* Smooth scrollbar styling */
+/* Smooth scrollbar with contrast */
 ::-webkit-scrollbar {
   width: 4px;
   height: 4px;
@@ -20,6 +20,6 @@ body {
   background: #3B2C3A;
 }
 ::-webkit-scrollbar-thumb {
-  background: #6B4E5A;
+  background: #A67B8B;
   border-radius: 8px;
 }
