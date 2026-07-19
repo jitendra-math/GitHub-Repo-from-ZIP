@@ -6,10 +6,10 @@ export default function ProgressBar({ progress = 0, message = 'Processing...' })
 
   return (
     <div className="w-full flex flex-col items-center">
-      <p className="text-sm text-textSecondary mb-3 font-medium animate-pulse">
+      <p className="text-sm text-textSecondary mb-3 font-medium transition-opacity duration-500">
         {message}
       </p>
-      <div className="w-full h-2 bg-surfaceHighlight rounded-full overflow-hidden shadow-inner">
+      <div className="w-full h-2 bg-surface rounded-full overflow-hidden">
         <motion.div 
           className="h-full bg-primary"
           initial={{ width: 0 }}
