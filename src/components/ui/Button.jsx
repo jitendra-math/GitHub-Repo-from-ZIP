@@ -10,19 +10,21 @@ export default function Button({
   disabled, 
   ...props 
 }) {
-  // Refined base: smaller padding, clean rounding, premium feel
-  const baseStyles = "w-full flex items-center justify-center gap-2 font-semibold rounded-xl py-3 px-4 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+  // Mobile-first base styling (Bade tap targets ke liye padding zyada rakhi hai)
+  const baseStyles = "w-full flex items-center justify-center gap-2 font-semibold rounded-2xl py-4 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
   
+  // Alag-alag themes ke liye variants
   const variants = {
-    primary: "bg-primary text-white hover:bg-[#8f6a7a] active:bg-[#7a5a68]",
-    secondary: "bg-surface text-textPrimary border border-border/30 hover:border-border/60",
-    danger: "bg-red-500/10 text-red-400 hover:bg-red-500/20",
-    ghost: "bg-transparent text-textSecondary hover:text-textPrimary"
+    primary: "bg-primary text-white",
+    secondary: "bg-surfaceHighlight text-white border border-border",
+    danger: "bg-red-500/10 text-red-500",
+    ghost: "bg-transparent text-textSecondary"
   }
 
   return (
     <motion.button
-      whileTap={disabled || isLoading ? {} : { scale: 0.98 }}
+      // Agar button disabled ya loading state mein hai, toh tap animation nahi hoga
+      whileTap={disabled || isLoading ? {} : { scale: 0.96 }}
       className={`${baseStyles} ${variants[variant]} ${className}`}
       disabled={disabled || isLoading}
       {...props}

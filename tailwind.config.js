@@ -7,31 +7,30 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Lighter warm background, darker surface for contrast
-        background: '#6B4E5A',      // mid mauve – lighter warm base
-        surface: '#3B2C3A',         // deep plum – cards/containers
-        surfaceHighlight: '#A67B8B', // accent / active states
-        primary: '#A67B8B',         // primary action color
-        textPrimary: '#FDF7F8',     // off-white text
-        textSecondary: '#E8D5D7',   // soft rose for secondary
-        border: '#E8D5D7',          // base border (opacity used)
+        // Premium dark mode colors
+        background: '#000000',
+        surface: '#1c1c1e', 
+        surfaceHighlight: '#2c2c2e',
+        primary: '#0a84ff', 
+        textPrimary: '#f5f5f7',
+        textSecondary: '#86868b',
+        border: '#38383a'
       },
       fontFamily: {
         sans: [
-          '-apple-system',
-          'BlinkMacSystemFont',
-          '"Segoe UI"',
-          'Roboto',
-          'Helvetica',
-          'Arial',
+          '-apple-system', 
+          'BlinkMacSystemFont', 
+          '"Segoe UI"', 
+          'Roboto', 
+          'Helvetica', 
+          'Arial', 
           'sans-serif'
         ],
       },
       boxShadow: {
-        'soft': '0 4px 20px rgba(0, 0, 0, 0.15)',
+        'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
       },
       borderRadius: {
-        'xl': '0.75rem',
         '2xl': '1rem',
         '3xl': '1.5rem',
       }

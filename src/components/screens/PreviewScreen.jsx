@@ -4,21 +4,23 @@ import { ChevronLeft, FolderGit2, FileCode, PackageOpen, GitBranch } from 'lucid
 import Button from '../ui/Button'
 
 export default function PreviewScreen({ 
-  uploadMode,
-  repoName,
-  existingRepoFullName,
-  branchName,
+  uploadMode,           // 'new' or 'existing'
+  repoName,             // for new mode
+  existingRepoFullName, // for existing mode
+  branchName,           // for existing mode
   extractedFiles, 
   onConfirm, 
   onBack 
 }) {
+  // Screen transition animations
   const screenVariants = {
     initial: { opacity: 0, x: 50 },
     animate: { opacity: 1, x: 0 },
     exit: { opacity: 0, x: -50 }
   }
 
-  const targetTitle = uploadMode === 'new' ? 'New Repository' : 'Existing + Branch'
+  // Determine target display text
+  const targetTitle = uploadMode === 'new' ? 'New Repository' : 'Existing Repository + Branch'
   const targetValue = uploadMode === 'new' 
     ? repoName 
     : `${existingRepoFullName} / ${branchName}`
@@ -31,62 +33,64 @@ export default function PreviewScreen({
       exit="exit"
       className="p-6 h-full flex flex-col w-full"
     >
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6 mt-4">
+      {/* Header with Back Button */}
+      <div className="flex items-center gap-4 mb-8 mt-4">
         <button 
           onClick={onBack}
-          className="p-2 bg-surface rounded-full text-textPrimary active:scale-95 transition-all"
+          className="p-2 bg-surfaceHighlight rounded-full text-textPrimary active:scale-90 transition-all"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <h2 className="text-xl font-semibold tracking-tight">Review Tree</h2>
+        <h2 className="text-2xl font-bold tracking-tight">Review Tree</h2>
       </div>
 
       {/* Target Info Card */}
-      <div className="bg-primary/10 border border-primary/20 rounded-xl p-3.5 mb-5 flex items-center gap-3.5">
-        <div className="w-9 h-9 bg-primary/20 rounded-lg flex items-center justify-center flex-shrink-0">
+      <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 mb-6 flex items-center gap-4">
+        <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
           {uploadMode === 'new' ? (
-            <PackageOpen className="w-5 h-5 text-primary" />
+            <PackageOpen className="w-6 h-6 text-primary" />
           ) : (
-            <GitBranch className="w-5 h-5 text-primary" />
+            <GitBranch className="w-6 h-6 text-primary" />
           )}
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-[10px] uppercase tracking-widest text-primary font-semibold">
+        <div className="flex-1">
+          <p className="text-[10px] uppercase tracking-widest text-primary font-bold">
             {targetTitle}
           </p>
-          <p className="text-base font-semibold text-textPrimary truncate">
+          <p className="text-lg font-semibold text-textPrimary truncate max-w-[220px]">
             {targetValue}
           </p>
           {uploadMode === 'existing' && (
-            <p className="text-[11px] text-textSecondary/70 mt-0.5">
-              ⚠️ Branch content will be <span className="font-medium">fully replaced</span>
+            <p className="text-xs text-textSecondary mt-1">
+              ⚠️ Branch content will be <strong>fully replaced</strong> with uploaded files.
             </p>
           )}
         </div>
       </div>
 
-      {/* File List */}
+      {/* Full File List - Scrollable */}
       <div className="flex-1 flex flex-col min-h-0">
-        <div className="flex justify-between items-center mb-2.5 ml-0.5">
-          <p className="text-sm text-textSecondary font-medium">Files to push</p>
-          <span className="text-[11px] bg-surface px-2 py-0.5 rounded-md text-textSecondary">
-            {extractedFiles.length}
+        <div className="flex justify-between items-center mb-3 ml-1">
+          <p className="text-sm text-textSecondary font-medium">
+            Files to be pushed
+          </p>
+          <span className="text-xs bg-surfaceHighlight px-2 py-1 rounded-md text-textSecondary">
+            {extractedFiles.length} items
           </span>
         </div>
 
-        <div className="flex-1 bg-background/50 border border-border/10 rounded-xl overflow-hidden flex flex-col">
-          <div className="flex-1 overflow-y-auto p-3.5 space-y-2.5">
+        <div className="flex-1 bg-black/40 border border-border rounded-2xl overflow-hidden flex flex-col">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
             {extractedFiles.map((file, idx) => (
               <motion.div 
                 key={idx}
-                initial={{ opacity: 0, y: 4 }}
+                initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.025 }}
-                className="flex items-center gap-2.5"
+                transition={{ delay: idx * 0.03 }}
+                className="flex items-center gap-3 border-b border-border/30 pb-2 last:border-0"
               >
-                <FileCode className="w-3.5 h-3.5 text-primary/50 flex-shrink-0" />
-                <p className="text-[11px] font-mono text-textPrimary/80 truncate">
+                <FileCode className="w-4 h-4 text-primary/60 flex-shrink-0" />
+                <p className="text-xs font-mono text-textPrimary/90 truncate">
                   {file.path}
                 </p>
               </motion.div>
@@ -95,15 +99,15 @@ export default function PreviewScreen({
         </div>
       </div>
 
-      {/* Action Button */}
-      <div className="mt-5">
+      {/* Final Action Button */}
+      <div className="mt-6">
         <Button onClick={onConfirm}>
           <FolderGit2 className="w-5 h-5" />
           {uploadMode === 'new' ? 'Create Repo & Push' : 'Push to Branch'}
         </Button>
       </div>
 
-      <p className="text-[10px] text-center text-textSecondary/40 mt-3.5 uppercase tracking-wide font-medium">
+      <p className="text-[10px] text-center text-textSecondary mt-4 opacity-50 uppercase tracking-tighter">
         Final check before commit
       </p>
     </motion.div>
