@@ -32,9 +32,10 @@ export default function UploadScreen({
     setRepoName(e.target.value.replace(/\s+/g, '-'))
   }
 
+  // ✅ UPPERCASE ALLOWED NOW – removed .toLowerCase()
   const handleExistingRepoChange = (e) => {
     let value = e.target.value.trim()
-    value = value.replace(/\s+/g, '').toLowerCase()
+    value = value.replace(/\s+/g, '') // sirf spaces hatao, case mat badlo
     setExistingRepoFullName(value)
   }
 
