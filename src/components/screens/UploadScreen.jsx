@@ -1,9 +1,8 @@
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useRef } from 'react'
 import { motion } from 'framer-motion'
-import { UploadCloud, FileArchive, FolderGit2, X, GitBranch, Sparkles, Loader2 } from 'lucide-react'
+import { UploadCloud, FileArchive, FolderGit2, X, GitBranch } from 'lucide-react'
 import Input from '../ui/Input'
 import Button from '../ui/Button'
-import { suggestRepoName } from '../../utils/openRouterApi'
 
 export default function UploadScreen({
   repoName,
@@ -22,9 +21,6 @@ export default function UploadScreen({
   onClearToken
 }) {
   const fileInputRef = useRef(null)
-  const [isSuggesting, setIsSuggesting] = useState(false)
-  const [suggestError, setSuggestError] = useState(null)
-  const [autoSuggestionUsed, setAutoSuggestionUsed] = useState(false)
 
   const screenVariants = {
     initial: { opacity: 0, x: 20 },
@@ -32,41 +28,8 @@ export default function UploadScreen({
     exit: { opacity: 0, x: -20 }
   }
 
-  // AI suggest when ZIP is uploaded (only for 'new' mode)
-  useEffect(() => {
-    if (uploadMode === 'new' && zipFile && extractedFiles.length > 0 && !repoName && !autoSuggestionUsed) {
-      handleAISuggest()
-    }
-  }, [zipFile, extractedFiles, uploadMode])
-
-  const handleAISuggest = async () => {
-    setIsSuggesting(true)
-    setSuggestError(null)
-    try {
-      const suggested = await suggestRepoName(extractedFiles)
-      if (suggested) {
-        // Clean: kebab-case, lowercase, alphanumeric + hyphen
-        const clean = suggested
-          .toLowerCase()
-          .replace(/[^a-z0-9-]/g, '-')
-          .replace(/-+/g, '-')
-          .replace(/^-|-$/g, '')
-        if (clean) {
-          setRepoName(clean)
-          setAutoSuggestionUsed(true)
-        }
-      }
-    } catch (err) {
-      setSuggestError(err.message || 'AI suggest failed')
-    } finally {
-      setIsSuggesting(false)
-    }
-  }
-
   const handleRepoNameChange = (e) => {
     setRepoName(e.target.value.replace(/\s+/g, '-'))
-    // User manually typed – disable future auto-suggest for this session
-    setAutoSuggestionUsed(true)
   }
 
   const handleExistingRepoChange = (e) => {
@@ -134,37 +97,12 @@ export default function UploadScreen({
       </div>
 
       {uploadMode === 'new' ? (
-        <div className="relative">
-          <Input
-            label="Repository Name"
-            placeholder="e.g. my-awesome-project"
-            value={repoName}
-            onChange={handleRepoNameChange}
-          />
-          {isSuggesting && (
-            <div className="absolute right-3 top-9 flex items-center gap-1.5 text-[11px] text-primary/70">
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              <span>AI suggesting...</span>
-            </div>
-          )}
-          {!isSuggesting && zipFile && !repoName && !suggestError && (
-            <div className="absolute right-3 top-9 flex items-center gap-1.5 text-[11px] text-primary/50">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>AI will suggest</span>
-            </div>
-          )}
-          {suggestError && (
-            <div className="absolute right-3 top-9 flex items-center gap-1.5 text-[11px] text-red-400/70">
-              <span>⚠️ {suggestError}</span>
-            </div>
-          )}
-          {!isSuggesting && repoName && autoSuggestionUsed && !suggestError && (
-            <div className="absolute right-3 top-9 flex items-center gap-1.5 text-[11px] text-green-400/60">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>AI suggested</span>
-            </div>
-          )}
-        </div>
+        <Input
+          label="Repository Name"
+          placeholder="e.g. my-awesome-project"
+          value={repoName}
+          onChange={handleRepoNameChange}
+        />
       ) : (
         <>
           <Input
