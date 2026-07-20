@@ -38,11 +38,11 @@ export default function UploadScreen({
     setRepoName(e.target.value.replace(/\s+/g, '-'))
   }
 
-  // Existing repo full name validation hint
+  // Existing repo full name – ab uppercase allow hai, sirf spaces hatao
   const handleExistingRepoChange = (e) => {
     let value = e.target.value.trim()
-    // Auto-remove spaces and convert to lowercase
-    value = value.replace(/\s+/g, '').toLowerCase()
+    // Auto-remove spaces, but allow uppercase
+    value = value.replace(/\s+/g, '')
     setExistingRepoFullName(value)
   }
 
